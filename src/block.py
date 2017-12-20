@@ -1,3 +1,67 @@
+from src.abstract_classes import AbstractFieldState, Block
+from src.board import Board
+
+
+class BlockWhite(AbstractFieldState, Block):
+
+    @classmethod
+    def use(cls, field, pawn):
+        cls.move_ability(field._board_size, field._position, pawn.current_position, Board.fields)
+
+
+    @staticmethod
+    def vector_list(current_position, pawn_position):
+        pawn_x, pawn_y = pawn_position
+        vector_x, vector_y = (current_position[0] - pawn_x,
+                              current_position[1] - pawn_y)
+        return vector_x, vector_y
+
+    @classmethod
+    def move_ability(cls, size, current_position, pawn_position, fields):
+        x, y = cls.vector_list(current_position, pawn_position)
+        if all(value in range(size) for value in [current_position[0] + x, current_position[1] + y]):
+            field = fields[(current_position[0] + x, current_position[1] + y)]
+            if field._state is None and field._access_for_blocks:
+                return current_position[0] + x, current_position[1] + y
+
+
+class BlockYellow(Block):
+
+    @staticmethod
+    def vector_list(current_position, pawn_position):
+        for i in range(size):
+            for j in range(size):
+                if (current_position[0], current_position[1]) != (i, j) and \
+                     fields[(i, j)].access_for_blocks and not fields[(i, j)].obj:
+                    yield (i, j)
+
+
+class BlockBlue(Block):
+
+    @staticmethod
+    def vector_list(current_position, pawn_position):
+        for (x, y) in fields[(current_position[0], current_position[1])].neighbours:
+            yield (x - current_position[0], y - current_position[1])
+
+    @classmethod
+    def move_ability(cls, size, current_position, pawn_position, fields)
+        for (x, y) in self.vector_list(fields):
+            current_x, current_y = current_position[0], current_position[1]
+            while True:
+                if current_x + x in range (size) and current_y + y in range(size):
+                    f = fields[(current_x+x, current_y+y)]
+                    if not f.obj and f.access_for_blocks:
+                        yield (current_x+x, current_y+y)
+                        current_x += x
+                        current_y += y
+                    else:
+                        break
+                else:
+                    break
+
+
+"""
+
 class Block:
     def __init__(self, start_position, size):
         self.size = size
@@ -62,3 +126,4 @@ class BlockBlue(Block):
                         break
                 else:
                     break
+"""

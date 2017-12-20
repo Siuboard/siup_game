@@ -1,41 +1,27 @@
-import board_xml_generator as b_generator
+import src.board_xml_generator as b_generator
 import os
-from field import Field
+from src import block
+from src.field import Field
 from xml.etree import ElementTree as ET
-import block
 
 
 class Board:
-    # now program creates board obj, using values which will comes from xml file parse
 
-    def __init__(self):
-        self.doc_name = self.__get_board_name()
-        # as board existing is confirmed, program takes from xml file all necessary values
+    __root, id, name, size = None, None, None, None
+    start_points, first_points, last_points, stop_point = list(), list(), list(), None
+    fields = dict()
+    white_blocks, yellow_blocks, blue_blocks = list(), list(), list()
+    blocks = dict()
 
-        self.__parse_from_xml = ET.parse('boards/' + self.doc_name)
-        __root = self.__parse_from_xml.getroot()
-        self.id = int(__root.get('id'))
-        self.name = __root.get('name')
-        self.size = int(__root.get('size'))
-        self.start_points = [tuple(int(value) for value in point.text.split(','))
-                             for point in __root.findall('start_points/start_point')]
-        self.first_points = [tuple(int(value) for value in point.text.split(','))
-                             for point in __root.findall('first_points/first_point')]
-        self.last_points = [tuple(int(value) for value in point.text.split(','))
-                            for point in __root.findall('last_points/last_point')]
-        self.stop_point = tuple(int(value) for value in __root.find('stop_point').text.split(','))
-        self.fields = dict.fromkeys([(j,i) for j in range(self.size) for i in range(self.size)], None)
-        self.put_fields_to_dict()
-        self.white_blocks = [tuple(int(value) for value in point.text.split(','))
-                             for point in __root.findall('blocks/white_block')]
-        self.yellow_blocks = [tuple(int(value) for value in point.text.split(','))
-                              for point in __root.findall('blocks/yellow_block')]
-        self.blue_blocks = [tuple(int(value) for value in point.text.split(','))
-                            for point in __root.findall('blocks/blue_block')]
-        self.blocks = dict.fromkeys([(x,y) for x in range(self.size) for y in range(self.size)], None)
-        self.put_blocks_to_dict()
+    @classmethod
+    def __call__(cls, *args, **kwargs):
+        cls.parse_xml(cls.__get_board_name())
+        cls.points_init()
+        cls.fields_init()
+        cls.blocks_init()
 
-    def __get_board_name(self):
+    @classmethod
+    def __get_board_name(cls):
         # at first user enters name of board he want to play,
         # then program is checking if this file exists
         doc_name = ''
@@ -47,21 +33,56 @@ class Board:
                 else:
                     print('So one more time...')
                     doc_name = ''
-
         return doc_name
 
-    def put_fields_to_dict(self):
-        for (x, y) in self.fields:
-            self.fields[(x, y)] = Field(x, y, self.size, self.start_points,
-                                        self.first_points, self.last_points, self.stop_point)
+    @classmethod
+    def parse_xml(cls, doc_name):
+        __parse_from_xml = ET.parse('boards/' + doc_name)
+        cls.__root = __parse_from_xml.getroot()
+        cls.id = int(cls.__root.get('id'))
+        cls.name = cls.__root.get('name')
+        cls.size = int(cls.__root.get('size'))
 
-    def put_blocks_to_dict(self):
-        for (x,y) in self.white_blocks:
-            self.blocks[(x, y)] = block.BlockWhite((x, y), self.size)
-            self.fields[(x, y)].obj = 'white'
-        for (x,y) in self.yellow_blocks:
-            self.blocks[(x, y)] = block.BlockYellow((x, y), self.size)
-            self.fields[(x, y)].obj = 'yellow'
-        for (x,y) in self.blue_blocks:
-            self.blocks[(x,y)] = block.BlockBlue((x, y), self.size)
-            self.fields[(x, y)].obj = 'blue'
+    @classmethod
+    def points_init(cls):
+        cls.start_points = [tuple(int(value) for value in point.text.split(','))
+                            for point in cls.__root.findall('start_points/start_point')]
+        cls.first_points = [tuple(int(value) for value in point.text.split(','))
+                            for point in cls.__root.findall('first_points/first_point')]
+        cls.last_points = [tuple(int(value) for value in point.text.split(','))
+                            for point in cls.__root.findall('last_points/last_point')]
+        cls.stop_point = tuple(int(value) for value in cls.__root.find('stop_point').text.split(','))
+
+    @classmethod
+    def fields_init(cls):
+        cls.fields = dict.fromkeys([(j, i) for j in range(cls.size) for i in range(cls.size)], None)
+
+        for (x, y) in cls.fields:
+            cls.fields[(x, y)] = Field((x, y), cls.size,
+                        [False, True][any([(x, y) in arr for arr in
+                                           [cls.start_points, cls.first_points, cls.last_points]])
+                                      or (x, y) == cls.stop_point],
+                        [True, False][(x, y) in cls.start_points])
+
+    @classmethod
+    def blocks_init(cls):
+        cls.white_blocks = [tuple(int(value) for value in point.text.split(','))
+                            for point in cls.__root.findall('blocks/white_block')]
+        cls.yellow_blocks = [tuple(int(value) for value in point.text.split(','))
+                             for point in cls.__root.findall('blocks/yellow_block')]
+        cls.blue_blocks = [tuple(int(value) for value in point.text.split(','))
+                           for point in cls.__root.findall('blocks/blue_block')]
+
+        cls.blocks = dict.fromkeys([(x, y) for x in range(cls.size) for y in range(cls.size)], None)
+
+    # TODO decide if blocks array is needed
+
+        for (x, y) in cls.white_blocks:
+            cls.blocks[(x, y)] = 'white'
+            cls.fields[(x, y)].state = block.BlockWhite
+        for (x, y) in cls.yellow_blocks:
+            cls.blocks[(x, y)] = 'yellow'
+            cls.fields[(x, y)].obj = block.BlockYellow
+        for (x, y) in cls.blue_blocks:
+            cls.blocks[(x, y)] = 'blue'
+            cls.fields[(x, y)].obj = block.BlockBlue

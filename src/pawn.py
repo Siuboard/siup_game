@@ -3,7 +3,6 @@ class Pawn:
         self.id = pawn_id
         self.owner = owner_id
         self.current_position = None
-        self.is_selected = False        #not used
         self.access_to_specials = False
         self.type = 'pawn{}{}'.format(self.id, self.owner)
         self.possibilities = None
