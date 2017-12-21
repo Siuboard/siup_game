@@ -10,7 +10,7 @@ Fields) are declared. Then Pawn while is looking for possible actions,
   should be stored in external file. Then also board_xml_generator have
   to get possible types from said file.
  
-1). Refact Pawns, and way of checking its usable
+1). Refact Pawns, and way of checking its usable (LISKOV principle)
 
 2). Relationship between Blocks, Pawns and Fields. 
 Blocks, and Pawns should be stored as State of Field.
